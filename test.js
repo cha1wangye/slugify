@@ -130,10 +130,13 @@ test('options set to `undefined` use the defaults', () => {
 	assert.equal(slugify('Déjà Vu fooBar', {
 		separator: undefined,
 		lowercase: undefined,
+		preserveCase: undefined,
 		decamelize: undefined,
 		customReplacements: undefined,
+		collapseWhitespace: undefined,
 		preserveLeadingUnderscore: undefined,
 		preserveTrailingDash: undefined,
+		stripSeparators: undefined,
 		preserveCharacters: undefined,
 		transliterate: undefined,
 		locale: undefined,
@@ -394,6 +397,68 @@ test('lowercase option', () => {
 	assert.equal(slugify('UNICORNS AND RAINBOWS!', {separator: '@', lowercase: false}), 'UNICORNS@AND@RAINBOWS');
 	assert.equal(slugify('[foo] [bar]', {separator: '.', lowercase: false}), 'foo.bar', 'escape regexp special characters');
 	assert.equal(slugify('Foo🦄', {lowercase: false}), 'Foo-unicorn');
+});
+
+test('preserveCase option', () => {
+	assert.equal(slugify('Foo Bar'), 'foo-bar');
+	assert.equal(slugify('Foo Bar', {preserveCase: false}), 'foo-bar');
+	assert.equal(slugify('Foo Bar', {preserveCase: true}), 'Foo-Bar');
+	assert.equal(slugify('FooBar', {preserveCase: true}), 'Foo-Bar');
+	assert.equal(slugify('fooBar', {preserveCase: true}), 'foo-Bar');
+	assert.equal(slugify('Déjà Vu!', {preserveCase: true}), 'Deja-Vu');
+
+	// `lowercase` wins over `preserveCase` when both are enabled.
+	assert.equal(slugify('Foo Bar', {lowercase: true, preserveCase: true}), 'foo-bar');
+	assert.equal(slugify('Foo Bar', {lowercase: false, preserveCase: true}), 'Foo-Bar');
+});
+
+test('collapseWhitespace option', () => {
+	assert.equal(slugify('foo   bar'), 'foo-bar');
+	assert.equal(slugify('foo   bar', {collapseWhitespace: false}), 'foo-bar');
+	assert.equal(slugify('foo   bar', {collapseWhitespace: true}), 'foo-bar');
+	assert.equal(slugify('foo \t\n bar', {collapseWhitespace: true}), 'foo-bar');
+	assert.equal(slugify('  foo   bar  ', {collapseWhitespace: true}), 'foo-bar');
+	assert.equal(slugify('foo   bar', {collapseWhitespace: true, separator: '_'}), 'foo_bar');
+
+	// The option also collapses whitespace that `preserveCharacters` would otherwise keep.
+	assert.equal(slugify('foo   bar', {preserveCharacters: [' ']}), 'foo   bar');
+	assert.equal(slugify('foo   bar', {preserveCharacters: [' '], collapseWhitespace: true}), 'foo-bar');
+});
+
+test('stripSeparators option', () => {
+	assert.equal(slugify('_foo-', {preserveLeadingUnderscore: true, preserveTrailingDash: true}), '_foo-');
+	assert.equal(slugify('_foo-', {preserveLeadingUnderscore: true, preserveTrailingDash: true, stripSeparators: true}), 'foo');
+	assert.equal(slugify('_foo', {preserveLeadingUnderscore: true, stripSeparators: true}), 'foo');
+	assert.equal(slugify('foo-', {preserveTrailingDash: true, stripSeparators: true}), 'foo');
+
+	// Works when the separator itself is the character that would be preserved at the edge.
+	assert.equal(slugify('_foo-', {
+		separator: '_',
+		preserveLeadingUnderscore: true,
+		preserveTrailingDash: true,
+	}), '_foo-');
+	assert.equal(slugify('_foo-', {
+		separator: '_',
+		preserveLeadingUnderscore: true,
+		preserveTrailingDash: true,
+		stripSeparators: true,
+	}), 'foo');
+});
+
+test('preserveCase, collapseWhitespace and stripSeparators compose', () => {
+	assert.equal(slugify('  Foo   BAR  ', {
+		preserveCase: true,
+		collapseWhitespace: true,
+		stripSeparators: true,
+	}), 'Foo-BAR');
+
+	assert.equal(slugify('_Foo   BAR-', {
+		preserveCase: true,
+		collapseWhitespace: true,
+		stripSeparators: true,
+		preserveLeadingUnderscore: true,
+		preserveTrailingDash: true,
+	}), 'Foo-BAR');
 });
 
 test('decamelize option', () => {
