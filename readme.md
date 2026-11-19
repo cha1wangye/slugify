@@ -47,6 +47,23 @@ String to slugify.
 
 Type: `object`
 
+The options are summarized in the table below and described in more detail afterwards.
+
+| Option | Type | Default | Example |
+| --- | --- | --- | --- |
+| `separator` | `string` | `'-'` | `slugify('foo bar', {separator: '_'})` → `'foo_bar'` |
+| `lowercase` | `boolean` | `true` | `slugify('FOO BAR', {lowercase: false})` → `'FOO-BAR'` |
+| `preserveCase` | `boolean` | `false` | `slugify('Foo Bar', {preserveCase: true})` → `'Foo-Bar'` |
+| `decamelize` | `boolean` | `true` | `slugify('fooBar', {decamelize: false})` → `'foobar'` |
+| `customReplacements` | `Array<string[]>` | `[['&', ' and '], ['🦄', ' unicorn '], ['♥', ' love ']]` | `slugify('foo@bar', {customReplacements: [['@', ' at ']]})` → `'foo-at-bar'` |
+| `collapseWhitespace` | `boolean` | `false` | `slugify('foo   bar', {collapseWhitespace: true})` → `'foo-bar'` |
+| `preserveLeadingUnderscore` | `boolean` | `false` | `slugify('_foo', {preserveLeadingUnderscore: true})` → `'_foo'` |
+| `preserveTrailingDash` | `boolean` | `false` | `slugify('foo-', {preserveTrailingDash: true})` → `'foo-'` |
+| `stripSeparators` | `boolean` | `false` | `slugify('_foo-', {preserveLeadingUnderscore: true, preserveTrailingDash: true, stripSeparators: true})` → `'foo'` |
+| `preserveCharacters` | `string[]` | `[]` | `slugify('foo#bar', {preserveCharacters: ['#']})` → `'foo#bar'` |
+| `locale` | `string` | `undefined` | `slugify('Räksmörgås', {locale: 'sv'})` → `'raksmorgas'` |
+| `transliterate` | `boolean` | `true` | `slugify('Déjà Vu', {transliterate: false})` → `'déjà-vu'` |
+
 ##### separator
 
 Type: `string`\
@@ -80,6 +97,25 @@ slugify('Déjà Vu!');
 
 slugify('Déjà Vu!', {lowercase: false});
 //=> 'Deja-Vu'
+```
+
+##### preserveCase
+
+Type: `boolean`\
+Default: `false`
+
+Keep the case of the words instead of lowercasing them.
+
+`lowercase` takes precedence: setting both `lowercase: true` and `preserveCase: true` lowercases the slug.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('Foo Bar', {preserveCase: true});
+//=> 'Foo-Bar'
+
+slugify('Foo Bar', {lowercase: true, preserveCase: true});
+//=> 'foo-bar'
 ```
 
 ##### decamelize
@@ -151,6 +187,25 @@ slugify('I love 🐶', {
 //=> 'i-love-dogs'
 ```
 
+##### collapseWhitespace
+
+Type: `boolean`\
+Default: `false`
+
+Replace every run of whitespace in the input with a single separator.
+
+This also applies to whitespace that `preserveCharacters` would otherwise keep.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('foo   bar', {collapseWhitespace: true});
+//=> 'foo-bar'
+
+slugify('foo   bar', {collapseWhitespace: true, separator: '_'});
+//=> 'foo_bar'
+```
+
 ##### preserveLeadingUnderscore
 
 Type: `boolean`\
@@ -187,6 +242,23 @@ slugify('foo-bar-');
 
 slugify('foo-bar-', {preserveTrailingDash: true});
 //=> 'foo-bar-'
+```
+
+##### stripSeparators
+
+Type: `boolean`\
+Default: `false`
+
+Remove leading and trailing separators even when `preserveLeadingUnderscore` or `preserveTrailingDash` would keep them.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('_foo-', {preserveLeadingUnderscore: true, preserveTrailingDash: true});
+//=> '_foo-'
+
+slugify('_foo-', {preserveLeadingUnderscore: true, preserveTrailingDash: true, stripSeparators: true});
+//=> 'foo'
 ```
 
 ##### preserveCharacters
