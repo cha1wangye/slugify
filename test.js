@@ -126,6 +126,34 @@ test('custom separator', () => {
 	assert.equal(slugify(String.raw`foo\bar`), 'foo-bar');
 });
 
+test('maxLength', () => {
+	// Cut at a separator boundary, without leaving a trailing separator.
+	assert.equal(slugify('foo bar baz', {maxLength: 7}), 'foo-bar');
+	assert.equal(slugify('foo bar baz', {maxLength: 8}), 'foo-bar');
+	assert.equal(slugify('foo bar baz', {maxLength: 6}), 'foo');
+	assert.equal(slugify('foo bar baz', {maxLength: 11}), 'foo-bar-baz');
+
+	// A first word that is too long is cut mid-word, as there is no separator to cut at.
+	assert.equal(slugify('abcdefghij', {maxLength: 4}), 'abcd');
+	assert.equal(slugify('abcdefghij foo', {maxLength: 4}), 'abcd');
+
+	// No truncation by default, and a length that already fits is left alone.
+	assert.equal(slugify('foo bar baz'), 'foo-bar-baz');
+	assert.equal(slugify('foo bar', {maxLength: 100}), 'foo-bar');
+	assert.equal(slugify('foo bar', {maxLength: undefined}), 'foo-bar');
+
+	// A custom separator sets the boundary.
+	assert.equal(slugify('foo bar baz', {maxLength: 7, separator: '_'}), 'foo_bar');
+	assert.equal(slugify('a b c', {maxLength: 2, separator: '__'}), 'a');
+	assert.equal(slugify('foo bar baz', {maxLength: 5, separator: ''}), 'fooba');
+
+	// Preserved characters are part of the result that gets truncated.
+	assert.equal(slugify('_foo bar', {preserveLeadingUnderscore: true, maxLength: 4}), '_foo');
+	assert.equal(slugify('foo bar-', {preserveTrailingDash: true, maxLength: 7}), 'foo-bar');
+
+	assert.equal(slugify('foo bar', {maxLength: 0}), '');
+});
+
 test('options set to `undefined` use the defaults', () => {
 	assert.equal(slugify('Déjà Vu fooBar', {
 		separator: undefined,
@@ -137,6 +165,7 @@ test('options set to `undefined` use the defaults', () => {
 		preserveCharacters: undefined,
 		transliterate: undefined,
 		locale: undefined,
+		maxLength: undefined,
 	}), 'deja-vu-foo-bar');
 });
 

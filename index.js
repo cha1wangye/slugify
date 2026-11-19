@@ -38,6 +38,35 @@ const removeMootSeparators = (string, separator) => {
 		.replaceAll(new RegExp(`^(?:${escapedSeparator})|(?:${escapedSeparator})$`, 'gv'), '');
 };
 
+// Truncate at a separator boundary so the result never ends with a separator. If no complete word fits, there is no boundary to cut at, so the first word is cut mid-way instead.
+const truncate = (string, maxLength, separator) => {
+	if (maxLength === undefined || string.length <= maxLength) {
+		return string;
+	}
+
+	if (maxLength <= 0) {
+		return '';
+	}
+
+	if (!separator) {
+		return string.slice(0, maxLength);
+	}
+
+	let result = '';
+
+	for (const word of string.split(separator)) {
+		const candidate = result ? `${result}${separator}${word}` : word;
+
+		if (candidate.length > maxLength) {
+			break;
+		}
+
+		result = candidate;
+	}
+
+	return result || string.slice(0, maxLength);
+};
+
 // Strip the trailing counter groups from a slug, so `foo-1-2` becomes `foo`. This is done with a split rather than a `(?:-\d+)+$` regex, as that pattern is unanchored and so retries at every `-` in the string, which is quadratic on input such as `-1-1-1…-1a`.
 const removeCounterSuffix = string => {
 	const parts = string.split('-');
@@ -154,6 +183,8 @@ export default function slugify(string, options) {
 	if (shouldAppendDash && !string.endsWith('-')) {
 		string += '-';
 	}
+
+	string = truncate(string, options.maxLength, options.separator);
 
 	return string;
 }

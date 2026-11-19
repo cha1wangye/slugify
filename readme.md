@@ -247,6 +247,25 @@ slugify('Déjà Vu', {transliterate: false});
 //=> 'déjà-vu'
 ```
 
+##### maxLength
+
+Type: `number`\
+Default: `undefined`
+
+Truncate the slug to this many characters.
+
+The slug is cut at a separator boundary, so it never ends with a separator. If the first word alone is longer than `maxLength`, the slug is cut at exactly `maxLength` characters instead.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('foo bar baz', {maxLength: 7});
+//=> 'foo-bar'
+
+slugify('abcdefghij', {maxLength: 4});
+//=> 'abcd'
+```
+
 ### slugifyWithCounter()
 
 Returns a new instance of `slugify(string, options?)` with a counter to handle multiple occurrences of the same string.

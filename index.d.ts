@@ -193,6 +193,26 @@ export type Options = {
 	```
 	*/
 	readonly transliterate?: boolean;
+
+	/**
+	Truncate the slug to this many characters.
+
+	The slug is cut at a separator boundary, so it never ends with a separator. If the first word alone is longer than `maxLength`, the slug is cut at exactly `maxLength` characters instead.
+
+	@default undefined
+
+	@example
+	```
+	import slugify from '@sindresorhus/slugify';
+
+	slugify('foo bar baz', {maxLength: 7});
+	//=> 'foo-bar'
+
+	slugify('abcdefghij', {maxLength: 4});
+	//=> 'abcd'
+	```
+	*/
+	readonly maxLength?: number;
 };
 
 /**
