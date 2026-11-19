@@ -247,6 +247,63 @@ slugify('Déjà Vu', {transliterate: false});
 //=> 'déjà-vu'
 ```
 
+##### maxLength
+
+Type: `number`\
+Default: `undefined`
+
+Truncate the slug to this many characters.
+
+The slug is cut at a word boundary, so it never ends with a separator. If the first word alone is longer than `maxLength`, the slug is cut at exactly `maxLength` characters instead.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('foo bar baz', {maxLength: 7});
+//=> 'foo-bar'
+
+slugify('abcdefghij', {maxLength: 4});
+//=> 'abcd'
+```
+
+##### truncateWords
+
+Type: `number`\
+Default: `undefined`
+
+Keep only the first `truncateWords` words of the slug.
+
+Words are separated by the configured `separator`. The truncated slug never ends with a separator. When both this and `maxLength` are set, both limits apply, and the shorter result wins.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('one two three four', {truncateWords: 2});
+//=> 'one-two'
+
+slugify('one two three', {truncateWords: 3, maxLength: 5});
+//=> 'one'
+```
+
+##### fallback
+
+Type: `string`\
+Default: `undefined`
+
+Return this string, unchanged, when the slug would otherwise be empty.
+
+The fallback is not slugified.
+
+```js
+import slugify from '@sindresorhus/slugify';
+
+slugify('!!!', {fallback: 'untitled'});
+//=> 'untitled'
+
+slugify('!!!', {fallback: 'Untitled Page!'});
+//=> 'Untitled Page!'
+```
+
 ### slugifyWithCounter()
 
 Returns a new instance of `slugify(string, options?)` with a counter to handle multiple occurrences of the same string.

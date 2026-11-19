@@ -38,6 +38,54 @@ const removeMootSeparators = (string, separator) => {
 		.replaceAll(new RegExp(`^(?:${escapedSeparator})|(?:${escapedSeparator})$`, 'gv'), '');
 };
 
+// Truncate at a word boundary so the result never ends with a separator. If the first word alone is longer than `maxLength`, there is no boundary to cut at, so it is cut mid-word instead.
+const truncateToLength = (string, maxLength, separator) => {
+	if (maxLength === undefined || string.length <= maxLength) {
+		return string;
+	}
+
+	if (maxLength <= 0) {
+		return '';
+	}
+
+	if (!separator) {
+		return string.slice(0, maxLength);
+	}
+
+	let result = '';
+
+	for (const word of string.split(separator)) {
+		const candidate = result ? `${result}${separator}${word}` : word;
+
+		if (candidate.length > maxLength) {
+			break;
+		}
+
+		result = candidate;
+	}
+
+	return result || string.slice(0, maxLength);
+};
+
+// Keep only the first `truncateWords` words, so a truncated slug never ends with a separator. Without a separator, the whole slug is a single word. Preserved leading/trailing characters are not counted as words.
+const truncateToWords = (string, truncateWords, separator) => {
+	if (truncateWords === undefined) {
+		return string;
+	}
+
+	if (truncateWords <= 0) {
+		return '';
+	}
+
+	if (!separator) {
+		return string;
+	}
+
+	const words = string.split(separator).filter(word => word !== '');
+
+	return words.length <= truncateWords ? string : words.slice(0, truncateWords).join(separator);
+};
+
 // Strip the trailing counter groups from a slug, so `foo-1-2` becomes `foo`. This is done with a split rather than a `(?:-\d+)+$` regex, as that pattern is unanchored and so retries at every `-` in the string, which is quadratic on input such as `-1-1-1…-1a`.
 const removeCounterSuffix = string => {
 	const parts = string.split('-');
@@ -155,7 +203,10 @@ export default function slugify(string, options) {
 		string += '-';
 	}
 
-	return string;
+	string = truncateToWords(string, options.truncateWords, options.separator);
+	string = truncateToLength(string, options.maxLength, options.separator);
+
+	return string === '' && options.fallback !== undefined ? options.fallback : string;
 }
 
 export function slugifyWithCounter() {
