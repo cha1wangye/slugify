@@ -126,6 +126,84 @@ test('custom separator', () => {
 	assert.equal(slugify(String.raw`foo\bar`), 'foo-bar');
 });
 
+test('maxLength', () => {
+	// Cut at a word boundary so the slug never ends with a separator.
+	assert.equal(slugify('foo bar baz', {maxLength: 7}), 'foo-bar');
+	assert.equal(slugify('foo bar baz', {maxLength: 8}), 'foo-bar');
+	assert.equal(slugify('foo bar baz', {maxLength: 6}), 'foo');
+	assert.equal(slugify('foo bar baz', {maxLength: 11}), 'foo-bar-baz');
+
+	// A first word that is too long is cut mid-word, as there is no word boundary to cut at.
+	assert.equal(slugify('abcdefghij', {maxLength: 4}), 'abcd');
+	assert.equal(slugify('abcdefghij foo', {maxLength: 4}), 'abcd');
+
+	// No truncation by default, and a slug that already fits is left alone.
+	assert.equal(slugify('foo bar baz'), 'foo-bar-baz');
+	assert.equal(slugify('foo bar', {maxLength: 100}), 'foo-bar');
+	assert.equal(slugify('foo bar', {maxLength: undefined}), 'foo-bar');
+
+	// A custom separator marks the word boundaries.
+	assert.equal(slugify('foo bar baz', {maxLength: 7, separator: '_'}), 'foo_bar');
+	assert.equal(slugify('foo bar baz', {maxLength: 5, separator: '__'}), 'foo');
+	assert.equal(slugify('foo bar baz', {maxLength: 3, separator: ''}), 'foo');
+
+	// The limit applies to the final slug, including preserved edge characters.
+	assert.equal(slugify('_foo bar', {preserveLeadingUnderscore: true, maxLength: 4}), '_foo');
+	assert.equal(slugify('foo bar-', {preserveTrailingDash: true, maxLength: 7}), 'foo-bar');
+	assert.equal(slugify('foo bar-', {preserveTrailingDash: true, maxLength: 8}), 'foo-bar-');
+
+	assert.equal(slugify('foo bar', {maxLength: 0}), '');
+});
+
+test('truncateWords', () => {
+	assert.equal(slugify('one two three four', {truncateWords: 2}), 'one-two');
+	assert.equal(slugify('one two three four', {truncateWords: 1}), 'one');
+	assert.equal(slugify('one two three four', {truncateWords: 4}), 'one-two-three-four');
+	assert.equal(slugify('one two three four', {truncateWords: 5}), 'one-two-three-four');
+
+	// No truncation by default.
+	assert.equal(slugify('one two three four'), 'one-two-three-four');
+	assert.equal(slugify('one two three four', {truncateWords: undefined}), 'one-two-three-four');
+	assert.equal(slugify('one two three four', {truncateWords: 0}), '');
+
+	// A custom separator marks the word boundaries, including a multi-character separator.
+	assert.equal(slugify('one two three', {truncateWords: 2, separator: '_'}), 'one_two');
+	assert.equal(slugify('one two three', {truncateWords: 2, separator: '__'}), 'one__two');
+	assert.equal(slugify('one two three', {truncateWords: 1, separator: ''}), 'onetwothree');
+
+	// A preserved edge character is not counted as a word.
+	assert.equal(slugify('foo bar-', {preserveTrailingDash: true, truncateWords: 2}), 'foo-bar-');
+	assert.equal(slugify('foo bar-', {preserveTrailingDash: true, truncateWords: 1}), 'foo');
+});
+
+test('maxLength and truncateWords compose', () => {
+	// Both limits apply, so the shorter result wins.
+	assert.equal(slugify('one two three', {truncateWords: 3, maxLength: 5}), 'one');
+	assert.equal(slugify('one two three', {truncateWords: 2, maxLength: 100}), 'one-two');
+	assert.equal(slugify('one two three', {truncateWords: 3, maxLength: 7}), 'one-two');
+	assert.equal(slugify('one two three', {truncateWords: 2, maxLength: 5}), 'one');
+
+	// A mid-word cut can leave a single word that `truncateWords` keeps.
+	assert.equal(slugify('abcdefghij foo bar', {truncateWords: 3, maxLength: 4}), 'abcd');
+});
+
+test('fallback', () => {
+	assert.equal(slugify('!!!', {fallback: 'untitled'}), 'untitled');
+	assert.equal(slugify('', {fallback: 'untitled'}), 'untitled');
+	assert.equal(slugify('!!!', {fallback: 'Untitled Page!'}), 'Untitled Page!', 'the fallback is not slugified');
+
+	// Only used when the slug would otherwise be empty.
+	assert.equal(slugify('foo', {fallback: 'untitled'}), 'foo');
+	assert.equal(slugify('foo', {fallback: undefined}), 'foo');
+
+	// A preserved edge character means the slug is not empty.
+	assert.equal(slugify('_', {preserveLeadingUnderscore: true, fallback: 'untitled'}), '_');
+
+	// The fallback applies when truncation empties the slug.
+	assert.equal(slugify('foo bar', {maxLength: 0, fallback: 'untitled'}), 'untitled');
+	assert.equal(slugify('foo bar', {truncateWords: 0, fallback: 'untitled'}), 'untitled');
+});
+
 test('options set to `undefined` use the defaults', () => {
 	assert.equal(slugify('Déjà Vu fooBar', {
 		separator: undefined,
@@ -137,6 +215,9 @@ test('options set to `undefined` use the defaults', () => {
 		preserveCharacters: undefined,
 		transliterate: undefined,
 		locale: undefined,
+		maxLength: undefined,
+		truncateWords: undefined,
+		fallback: undefined,
 	}), 'deja-vu-foo-bar');
 });
 
