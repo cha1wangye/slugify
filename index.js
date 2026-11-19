@@ -76,19 +76,32 @@ const buildPatternSlug = options => {
 const defaultOptions = {
 	separator: '-',
 	lowercase: true,
+	preserveCase: false,
 	decamelize: true,
 	customReplacements: [],
+	collapseWhitespace: false,
 	preserveLeadingUnderscore: false,
 	preserveTrailingDash: false,
+	stripSeparators: false,
 	preserveCharacters: [],
 	transliterate: true,
 };
 
 // Resolve every option in one place, so the rest of the function reads a complete object. An option set to `undefined` uses the default.
-const resolveOptions = options => ({
-	...defaultOptions,
-	...Object.fromEntries(Object.entries(options ?? {}).filter(([, value]) => value !== undefined)),
-});
+const resolveOptions = options => {
+	const providedOptions = options ?? {};
+	const resolvedOptions = {
+		...defaultOptions,
+		...Object.fromEntries(Object.entries(providedOptions).filter(([, value]) => value !== undefined)),
+	};
+
+	// `preserveCase` keeps the case of the words unless `lowercase` is explicitly enabled; an explicit `lowercase` wins over `preserveCase`.
+	if (resolvedOptions.preserveCase && providedOptions.lowercase !== true) {
+		resolvedOptions.lowercase = false;
+	}
+
+	return resolvedOptions;
+};
 
 export default function slugify(string, options) {
 	if (typeof string !== 'string') {
@@ -97,8 +110,8 @@ export default function slugify(string, options) {
 
 	options = resolveOptions(options);
 
-	const shouldPrependUnderscore = options.preserveLeadingUnderscore && string.startsWith('_');
-	const shouldAppendDash = options.preserveTrailingDash && string.endsWith('-');
+	const shouldPrependUnderscore = !options.stripSeparators && options.preserveLeadingUnderscore && string.startsWith('_');
+	const shouldAppendDash = !options.stripSeparators && options.preserveTrailingDash && string.endsWith('-');
 
 	let {customReplacements} = options;
 	if (options.transliterate) {
@@ -145,6 +158,11 @@ export default function slugify(string, options) {
 		: /(?<word>[\p{Letter}\p{Mark}\p{Number}])['\u{2019}](?<ending>[st])(?![\p{Letter}\p{Mark}\p{Number}])/giv;
 
 	string = string.replaceAll(contractionPattern, '$<word>$<ending>');
+
+	// A run of whitespace is always a word boundary when `collapseWhitespace` is enabled, even when `preserveCharacters` would otherwise keep the whitespace. This runs before the pattern replacement so the separator keeps its own casing.
+	if (options.collapseWhitespace) {
+		string = string.replaceAll(/\s+/gv, () => options.separator);
+	}
 
 	// The replacement is a function so a separator containing `$` is inserted literally instead of being read as a replacement pattern.
 	string = string.replace(patternSlug, () => options.separator);

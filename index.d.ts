@@ -37,6 +37,26 @@ export type Options = {
 	readonly lowercase?: boolean;
 
 	/**
+	Keep the case of the words instead of lowercasing them.
+
+	`lowercase` takes precedence: setting both `lowercase: true` and `preserveCase: true` lowercases the slug.
+
+	@default false
+
+	@example
+	```
+	import slugify from '@sindresorhus/slugify';
+
+	slugify('Foo Bar', {preserveCase: true});
+	//=> 'Foo-Bar'
+
+	slugify('Foo Bar', {lowercase: true, preserveCase: true});
+	//=> 'foo-bar'
+	```
+	*/
+	readonly preserveCase?: boolean;
+
+	/**
 	Convert camelcase to separate words. Internally it does `fooBar` → `foo bar`.
 
 	@default true
@@ -94,6 +114,24 @@ export type Options = {
 	readonly customReplacements?: ReadonlyArray<[string, string]>;
 
 	/**
+	Replace every run of whitespace in the input with a single separator.
+
+	@default false
+
+	@example
+	```
+	import slugify from '@sindresorhus/slugify';
+
+	slugify('foo   bar', {collapseWhitespace: true});
+	//=> 'foo-bar'
+
+	slugify('foo   bar', {collapseWhitespace: true, separator: '_'});
+	//=> 'foo_bar'
+	```
+	*/
+	readonly collapseWhitespace?: boolean;
+
+	/**
 	If your string starts with an underscore, it will be preserved in the slugified string.
 
 	Sometimes leading underscores are intentional, for example, filenames representing hidden paths on a website.
@@ -132,6 +170,21 @@ export type Options = {
 	```
 	 */
 	readonly preserveTrailingDash?: boolean;
+
+	/**
+	Remove leading and trailing separators even when `preserveLeadingUnderscore` or `preserveTrailingDash` would keep them.
+
+	@default false
+
+	@example
+	```
+	import slugify from '@sindresorhus/slugify';
+
+	slugify('_foo-', {preserveLeadingUnderscore: true, preserveTrailingDash: true, stripSeparators: true});
+	//=> 'foo'
+	```
+	*/
+	readonly stripSeparators?: boolean;
 
 	/**
 	Preserve certain characters.
