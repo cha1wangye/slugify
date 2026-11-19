@@ -73,23 +73,29 @@ const buildPatternSlug = options => {
 	return new RegExp(`(?:[^${negationSetPattern}]${combiningMarksPattern})+`, 'gu');
 };
 
+const defaultOptions = {
+	separator: '-',
+	lowercase: true,
+	decamelize: true,
+	customReplacements: [],
+	preserveLeadingUnderscore: false,
+	preserveTrailingDash: false,
+	preserveCharacters: [],
+	transliterate: true,
+};
+
+// Resolve every option in one place, so the rest of the function reads a complete object. An option set to `undefined` uses the default.
+const resolveOptions = options => ({
+	...defaultOptions,
+	...Object.fromEntries(Object.entries(options ?? {}).filter(([, value]) => value !== undefined)),
+});
+
 export default function slugify(string, options) {
 	if (typeof string !== 'string') {
 		throw new TypeError(`Expected a string, got \`${typeof string}\``);
 	}
 
-	options = {
-		separator: '-',
-		lowercase: true,
-		decamelize: true,
-		customReplacements: [],
-		preserveLeadingUnderscore: false,
-		preserveTrailingDash: false,
-		preserveCharacters: [],
-		transliterate: true,
-		// An option set to `undefined` uses the default.
-		...Object.fromEntries(Object.entries(options ?? {}).filter(([, value]) => value !== undefined)),
-	};
+	options = resolveOptions(options);
 
 	const shouldPrependUnderscore = options.preserveLeadingUnderscore && string.startsWith('_');
 	const shouldAppendDash = options.preserveTrailingDash && string.endsWith('-');
